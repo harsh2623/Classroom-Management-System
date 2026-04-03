@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Lectures Viewer - UniManage Pro{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>Hello, {{ session.username }} 👋</h1>
+    <p>View upcoming schedules and live occupancy stats.</p>
+</div>
+
+<div class="tabs-container glass-panel">
+    <div class="tabs">
+        <button class="tab-btn active" data-target="lectures-section"><i class="ri-calendar-event-line"></i> Daily Schedule</button>
+    </div>
+
+    <!-- LECTURES & OCCUPANCY SECTION -->
+    <div id="lectures-section" class="tab-content active">
+        <div class="section-actions">
+            <h2>Upcoming Lectures</h2>
+            <span class="user-badge" style="background: var(--primary); color: white;"><i class="ri-profile-line"></i> {{ session.role|capitalize }} View</span>
+        </div>
+        <div class="grid-cards" id="viewer-lectures-grid">
+            <!-- Populated via JS -->
+            <div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--text-dimmed);">
+                <i class="ri-loader-4-line ri-spin" style="font-size: 2rem;"></i><br>Loading schedules...
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    const res = await fetch('/api/lectures');
+    const data = await res.json();
+    
+    const grid = document.getElementById('viewer-lectures-grid');
+    grid.innerHTML = '';
+    
+    if (data.length === 0) {
+        grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--text-dimmed);">No upcoming lectures scheduled.</div>';
+    }
+    
+    for (let l of data) {
+        const statRes = await fetch(`/api/lectures/${l.id}/stats`);
+        const stats = statRes.ok ? await statRes.json() : { capacity: 0, enrolled: 0, occupancy_rate: 0, bench_area_per_student: 0 };
+        
+        let occClass = stats.occupancy_rate > 90 ? 'high' : (stats.occupancy_rate > 50 ? 'medium' : 'low');
+        
+        grid.innerHTML += `
+            <div class="lecture-card">
+                <div class="lecture-header">
+                    <div class="lecture-title">${l.title}</div>
+                    <div class="lecture-room"><i class="ri-map-pin-line"></i> ${l.classroom_name}</div>
+                </div>
+                <div class="text-sm text-dimmed mb-2"><i class="ri-presentation-line"></i> Teacher: <strong style="color:white;">${l.teacher_username || 'Not Assigned'}</strong></div>
+                <div class="lecture-time">
+                    <div><i class="ri-time-line"></i> ${new Date(l.start_time).toLocaleString()}</div>
+                    <div><i class="ri-arrow-right-line"></i> ${new Date(l.end_time).toLocaleTimeString()}</div>
+                </div>
+                
+                <div class="stats-box">
+                    <div class="stat-row">
+                        <span>Occupancy</span>
+                        <strong>${stats.enrolled} / ${stats.capacity} (${stats.occupancy_rate}%)</strong>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill ${occClass}" style="width: ${Math.min(stats.occupancy_rate, 100)}%"></div>
+                    </div>
+                    <div class="stat-row text-sm text-dimmed">
+                        <span>Status:</span>
+                        <span style="color: ${stats.occupancy_rate >= 100 ? 'var(--danger)' : 'var(--secondary)'}">${stats.occupancy_rate >= 100 ? 'FULL' : 'OPEN'}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+});
+</script>
+{% endblock %}

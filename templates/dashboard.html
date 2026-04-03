@@ -1,0 +1,365 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - UniManage Pro{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>Dashboard Overview</h1>
+    <p>Manage classrooms, complete live occupancy tracking, and prevent lecture conflicts.</p>
+</div>
+
+<div class="tabs-container glass-panel">
+    <div class="tabs">
+        {% if role == 'admin' %}
+        <button class="tab-btn active" data-target="classrooms-section"><i class="ri-layout-masonry-line"></i> Classrooms</button>
+        <button class="tab-btn" data-target="teachers-section"><i class="ri-presentation-line"></i> Teachers</button>
+        <button class="tab-btn" data-target="students-section"><i class="ri-team-line"></i> Students</button>
+        {% endif %}
+        <button class="tab-btn {% if role != 'admin' %}active{% endif %}" data-target="lectures-section"><i class="ri-calendar-event-line"></i> Lectures & Scheduling</button>
+    </div>
+
+    <!-- CLASSROOMS SECTION (Admin Only) -->
+    {% if role == 'admin' %}
+    <div id="classrooms-section" class="tab-content active">
+        <div class="section-actions">
+            <h2>Halls & Classrooms</h2>
+            <button class="btn btn-secondary" onclick="openModal('classroomModal')"><i class="ri-add-line"></i> Add Classroom</button>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Capacity</th>
+                        <th>Area (sqft)</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="classrooms-tbody">
+                    <!-- Populated via JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TEACHERS SECTION -->
+    <div id="teachers-section" class="tab-content">
+        <div class="section-actions">
+            <h2>Faculty Accounts</h2>
+            <button class="btn btn-secondary" onclick="openModal('addUserModal')"><i class="ri-user-add-line"></i> Add New User</button>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name (Username)</th>
+                        <th>Login Password</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="teachers-tbody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- STUDENTS SECTION -->
+    <div id="students-section" class="tab-content">
+        <div class="section-actions">
+            <h2>Directory & Contact Info</h2>
+            <button class="btn btn-secondary" onclick="openModal('studentModal')"><i class="ri-add-line"></i> Add Student Info</button>
+        </div>
+        <div class="table-responsive" style="margin-bottom: 2rem;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone Setup for WhatsApp</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="students-tbody">
+                    <!-- Populated via JS -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section-actions">
+            <h2>Student System Accounts</h2>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Login Password</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="student-accounts-tbody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- LECTURES & OCCUPANCY SECTION -->
+    <div id="lectures-section" class="tab-content {% if role != 'admin' %}active{% endif %}">
+        <div class="section-actions">
+            <h2>Schedules & Live Occupancy</h2>
+            <button class="btn btn-primary" onclick="openModal('lectureModal')"><i class="ri-add-line"></i> Schedule Lecture</button>
+        </div>
+        <div class="grid-cards" id="lectures-grid">
+            <!-- Populated via JS -->
+        </div>
+    </div>
+</div>
+
+<!-- MODALS -->
+
+<!-- Add Classroom Modal -->
+<div class="modal" id="classroomModal">
+    <div class="modal-content glass-panel">
+        <div class="modal-header">
+            <h3>Add New Classroom</h3>
+            <button class="close-btn" onclick="closeModal('classroomModal')"><i class="ri-close-line"></i></button>
+        </div>
+        <form id="form-classroom" onsubmit="addClassroom(event)">
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" name="name" required placeholder="e.g. Auditiorium A">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Capacity (Persons)</label>
+                    <input type="number" name="capacity" required placeholder="100">
+                </div>
+                <div class="form-group">
+                    <label>Total Area (sqft)</label>
+                    <input type="number" name="total_area_sqft" step="0.1" required placeholder="2000">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">Save Classroom</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Add Student Modal -->
+<div class="modal" id="studentModal">
+    <div class="modal-content glass-panel">
+        <div class="modal-header">
+            <h3>Enroll New Student</h3>
+            <button class="close-btn" onclick="closeModal('studentModal')"><i class="ri-close-line"></i></button>
+        </div>
+        <form id="form-student" onsubmit="addStudent(event)">
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" name="name" required placeholder="Jane Doe">
+            </div>
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" name="email" placeholder="jane@college.edu">
+            </div>
+            <div class="form-group">
+                <label>Phone Number (WhatsApp, e.g., +1234567890)</label>
+                <input type="text" name="phone" placeholder="+1234567890">
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">Add Student</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Add Lecture Modal -->
+<div class="modal" id="lectureModal">
+    <div class="modal-content glass-panel">
+        <div class="modal-header">
+            <h3>Schedule Lecture</h3>
+            <button class="close-btn" onclick="closeModal('lectureModal')"><i class="ri-close-line"></i></button>
+        </div>
+        <form id="form-lecture" onsubmit="addLecture(event)">
+            <div class="form-group">
+                <label>Lecture Title</label>
+                <input type="text" name="title" required placeholder="Advanced Data Structures CS301">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Select Room</label>
+                    <select name="classroom_id" id="lecture-classroom-select" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Assigned Teacher</label>
+                    <select name="teacher_username" id="lecture-teacher-select">
+                        <option value="Not Assigned">None / Unassigned</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Start Time</label>
+                <input type="datetime-local" name="start_time" required>
+            </div>
+            <div class="form-group">
+                <label>End Time</label>
+                <input type="datetime-local" name="end_time" required>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">Schedule (with conflict check)</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Enroll Student into Lecture Modal -->
+<div class="modal" id="enrollModal">
+    <div class="modal-content glass-panel">
+        <div class="modal-header">
+            <h3>Enroll Student</h3>
+            <button class="close-btn" onclick="closeModal('enrollModal')"><i class="ri-close-line"></i></button>
+        </div>
+        <form id="form-enroll" onsubmit="enrollStudent(event)">
+            <input type="hidden" id="enroll-lecture-id">
+            <div class="form-group">
+                <label>Select Student</label>
+                <select name="student_id" id="enroll-student-select" required>
+                    <!-- Populated via JS -->
+                </select>
+            </div>
+            <p class="text-sm text-dimmed"><i class="ri-information-line"></i> Enrolling will trigger Email/WhatsApp notification instantly if configured.</p>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-secondary">Confirm Enrollment</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Add User Modal -->
+<div class="modal" id="addUserModal">
+    <div class="modal-content glass-panel">
+        <div class="modal-header">
+            <h3>Add Teacher / Student</h3>
+            <button type="button" class="close-btn" onclick="closeModal('addUserModal')"><i class="ri-close-line"></i></button>
+        </div>
+        <form id="form-add-user" onsubmit="submitAddUser(event)">
+            <div class="form-group">
+                <label>Name / Username</label>
+                <input type="text" name="username" required placeholder="Professor Smith">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" name="password" required placeholder="Temporary Password">
+            </div>
+            <div class="form-group">
+                <label>Role</label>
+                <select name="role" required>
+                    <option value="teacher">Teacher</option>
+                    <option value="student">Student</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">Create Account</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit User Modal -->
+<div class="modal" id="editUserModal">
+    <div class="modal-content glass-panel">
+        <div class="modal-header">
+            <h3>Change Username</h3>
+            <button type="button" class="close-btn" onclick="closeModal('editUserModal')"><i class="ri-close-line"></i></button>
+        </div>
+        <form id="form-edit-user" onsubmit="submitEditUser(event)">
+            <input type="hidden" id="edit-user-id" name="id">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="edit-user-name" name="username" required>
+            </div>
+            <div class="form-group">
+                <label>New Password</label>
+                <input type="text" id="edit-user-password" name="password" placeholder="(Leave blank to keep unchanged)">
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Student Modal -->
+<div class="modal" id="editStudentModal">
+    <div class="modal-content glass-panel">
+        <div class="modal-header">
+            <h3>Change Student Details</h3>
+            <button type="button" class="close-btn" onclick="closeModal('editStudentModal')"><i class="ri-close-line"></i></button>
+        </div>
+        <form id="form-edit-student" onsubmit="submitEditStudent(event)">
+            <input type="hidden" id="edit-student-id" name="id">
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="edit-student-name" name="name" required>
+            </div>
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" id="edit-student-email" name="email">
+            </div>
+            <div class="form-group">
+                <label>Phone Number</label>
+                <input type="text" id="edit-student-phone" name="phone">
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Lecture Modal -->
+<div class="modal" id="editLectureModal">
+    <div class="modal-content glass-panel">
+        <div class="modal-header">
+            <h3>Edit Lecture</h3>
+            <button type="button" class="close-btn" onclick="closeModal('editLectureModal')"><i class="ri-close-line"></i></button>
+        </div>
+        <form id="form-edit-lecture" onsubmit="submitEditLecture(event)">
+            <input type="hidden" id="edit-lecture-id" name="id">
+            <div class="form-group">
+                <label>Lecture Title</label>
+                <input type="text" id="edit-lecture-title" name="title" required>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Select Room</label>
+                    <select name="classroom_id" id="edit-lecture-classroom" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Assigned Teacher</label>
+                    <select name="teacher_username" id="edit-lecture-teacher">
+                        <option value="Not Assigned">None / Unassigned</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Start Time</label>
+                <input type="datetime-local" id="edit-lecture-start" name="start_time" required>
+            </div>
+            <div class="form-group">
+                <label>End Time</label>
+                <input type="datetime-local" id="edit-lecture-end" name="end_time" required>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
