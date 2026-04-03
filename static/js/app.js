@@ -220,7 +220,7 @@ async function fetchUsers() {
             <tr>
                 <td>#${displayId}</td>
                 <td><strong>${u.username}</strong></td>
-                <td><code>${u.plain_password || 'Hidden'}</code></td>
+                <td><code>${u.plain_password || ''}</code></td>
                 <td style="display: flex; gap: 0.5rem;">
                     <button class="btn btn-secondary btn-sm" onclick="openEditUser(${u.id}, \`${u.username}\`)"><i class="ri-edit-line"></i></button>
                     <button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id})"><i class="ri-delete-bin-line"></i></button>

@@ -9,9 +9,9 @@ init_db()
 conn = get_db()
 
 # Create default admin
-pwd_hash = generate_password_hash('admin123')
 try:
-    conn.execute("INSERT INTO users (username, password_hash, role) VALUES ('admin', ?, 'admin')", (pwd_hash,))
+    pwd_hash = generate_password_hash('admin123')
+    conn.execute("INSERT INTO users (username, password_hash, role, plain_password) VALUES ('admin', ?, 'admin', 'admin123')", (pwd_hash,))
     print("Admin user created (username: admin, password: admin123)")
 except sqlite3.IntegrityError:
     print("Admin user already exists.")

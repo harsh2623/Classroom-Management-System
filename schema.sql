@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS users (
     username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     role TEXT NOT NULL DEFAULT 'student',
-    plain_password TEXT DEFAULT 'Hidden'
+    plain_password TEXT
 );
 
 CREATE TABLE IF NOT EXISTS classrooms (
